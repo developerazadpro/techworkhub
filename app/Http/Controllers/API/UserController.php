@@ -85,5 +85,41 @@ class UserController extends Controller
         ];
     }
 
+    public function getSkills(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->hasRole('technician')) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'skills' => $user->skills()->select('skills.id', 'skills.name')->get()->makeHidden('pivot')
+        ], 200);
+    }
+
+
+    public function updateSkills(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->hasRole('technician')) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $request->validate([
+            'skill_ids' => 'array',
+            'skill_ids.*' => 'exists:skills,id'
+        ]);
+
+        $user->skills()->sync($request->skill_ids);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Skills updated successfully'
+        ], 200);
+    }
+
     
 }
