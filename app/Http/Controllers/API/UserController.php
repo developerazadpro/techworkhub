@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Support\Facades\Hash;
+use App\Models\WorkJob;
+use App\Services\JobMatchingService;
 
 class UserController extends Controller
 {
@@ -114,6 +116,13 @@ class UserController extends Controller
         ]);
 
         $user->skills()->sync($request->skill_ids);
+
+        // Update recommended_technician in work_jobs
+        $openJobs = WorkJob::where('status', 'open')->get();
+
+        foreach ($openJobs as $job) {
+            app(JobMatchingService::class)->run($job);
+        }
 
         return response()->json([
             'success' => true,

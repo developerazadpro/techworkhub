@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\JobAssignment;
 use Illuminate\Support\Facades\DB;
-use App\Services\GoMatchingService;
+use App\Services\JobMatchingService;
 use App\Models\User;
 use App\Support\JobStatusTransition;
 
@@ -86,7 +86,7 @@ class WorkJobController extends Controller
 
         // 4. Call Go matching service (non-blocking)
         try {
-            $this->runMatching($job);
+            app(JobMatchingService::class)->run($job);
 
         } catch (\Throwable $e) {
             logger()->error('Go matching failed', [
@@ -139,7 +139,7 @@ class WorkJobController extends Controller
         // Re-run matching ONLY if needed
         if ($skillsChanged || ($validated['status'] ?? null) === 'open') {
             try {
-                $this->runMatching($job);
+                app(JobMatchingService::class)->run($job);
             } catch (\Throwable $e) {
                 logger()->error('Go matching failed on update', [
                     'work_job_id' => $job->id,
@@ -310,24 +310,5 @@ class WorkJobController extends Controller
             'allowed_next_statuses' => JobStatusTransition::allowed()[$nextStatus],
         ]);
     }
-
-    private function runMatching(WorkJob $job): void
-    {
-        $technicians = User::whereHas('roles', fn ($q) =>
-            $q->where('name', 'technician')
-        )->with('skills')->get();
-
-        $response = app(GoMatchingService::class)->matchTechnicians([
-            'job_id' => $job->id,
-            'required_skills' => $job->skills,
-            'technicians' => $technicians->map(fn ($tech) => [
-                'id' => $tech->id,
-                'skills' => $tech->skills->pluck('name')->toArray(),
-            ])->toArray(),
-        ]);
-
-        $job->update([
-            'recommended_technicians' => $response['recommended_technicians'] ?? [],
-        ]);
-    }
+    
 }
