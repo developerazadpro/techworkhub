@@ -15,6 +15,8 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::get('/user', [UserController::class, 'me']);    
     Route::get('/skills', [SkillController::class, 'index']);
     Route::post('/skills', [SkillController::class, 'store']);
+    Route::post('/skills/resolve-id-to-name', [SkillController::class, 'resolveIdToName']);
+    Route::post('/skills/resolve-name-to-id', [SkillController::class, 'resolveNameToId']);
 
     // 
     // ---------------------------------Technician------------------------------------------------

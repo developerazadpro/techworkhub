@@ -32,4 +32,38 @@ class SkillController extends Controller
         ], 201);
     }
 
+    public function resolveIdToName(Request $request)
+    {
+        $request->validate([
+            'skill_ids' => 'required|array|min:1',
+            'skill_ids.*' => 'exists:skills,id',
+        ]);
+
+        $skills = Skill::whereIn('id', $request->skill_ids)
+            ->pluck('name')
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'skills' => $skills, // ["plumber", "electrician"]
+        ], 200);
+    }
+
+    public function resolveNameToId(Request $request)
+    {
+        $request->validate([
+            'skills' => 'required|array|min:1',
+            'skills.*' => 'exists:skills,name',
+        ]);
+
+        $skillIds = Skill::whereIn('name', $request->skills)
+            ->pluck('id')
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'skill_ids' => $skillIds, // [1, 3, 5]
+        ], 200);
+    }
+
 }

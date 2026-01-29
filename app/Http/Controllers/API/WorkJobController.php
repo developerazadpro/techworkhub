@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use App\Services\JobMatchingService;
 use App\Models\User;
 use App\Support\JobStatusTransition;
+use App\Models\Skill;
 
 class WorkJobController extends Controller
 {
@@ -71,16 +72,21 @@ class WorkJobController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'skills' => 'required|array|min:1',
-            'skills.*' => 'string',
+            'skill_ids' => 'required|array|min:1',
+            'skill_ids.*' => 'exists:skills,id',
         ]);
+
+        // Convert skill IDs → names
+        $skills = Skill::whereIn('id', $request->skill_ids)
+            ->pluck('name')
+            ->toArray();
 
         // 3. Create job
         $job = WorkJob::create([
             'client_id' => Auth::id(),
             'title' => $validated['title'],
             'description' => $validated['description'],
-            'skills' => $validated['skills'],
+            'skills' => $skills,
             'status' => 'open',
         ]);
 
@@ -123,18 +129,31 @@ class WorkJobController extends Controller
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
-            'skills' => 'sometimes|array|min:1',
-            'skills.*' => 'string',
+            'skill_ids' => 'required|array|min:1',
+            'skill_ids.*' => 'exists:skills,id',            
             'status' => 'sometimes|in:open,closed',
         ]);
 
+        // Convert skill IDs → names (only if provided)
+        if (array_key_exists('skill_ids', $validated)) {
+            $skills = Skill::whereIn('id', $validated['skill_ids'])
+                ->pluck('name')
+                ->toArray();
+        }
         // Detect skill change
         $skillsChanged =
-            array_key_exists('skills', $validated) &&
-            $validated['skills'] !== $job->skills;
+            array_key_exists('skill_ids', $validated) &&
+            $skills !== $job->skills;
 
-        // Update job
-        $job->update($validated);
+        // Build update payload safely
+        $updateData = $validated;
+        
+        if (isset($skills)) {
+            $updateData['skills'] = $skills;             // overwrite names
+            unset($updateData['skill_ids']);             // cleanup
+        }
+
+        $job->update($updateData);
 
         // Re-run matching ONLY if needed
         if ($skillsChanged || ($validated['status'] ?? null) === 'open') {

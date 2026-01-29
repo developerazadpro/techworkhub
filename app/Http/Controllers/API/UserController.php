@@ -121,7 +121,14 @@ class UserController extends Controller
         $openJobs = WorkJob::where('status', 'open')->get();
 
         foreach ($openJobs as $job) {
-            app(JobMatchingService::class)->run($job);
+            try {
+                app(JobMatchingService::class)->run($job);
+            } catch (\Throwable $e) {
+                logger()->error('Matching failed after skill update', [
+                    'job_id' => $job->id,
+                    'tech_id' => $user->id,
+                ]);
+            }
         }
 
         return response()->json([
