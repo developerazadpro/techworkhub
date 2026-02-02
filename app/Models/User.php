@@ -71,4 +71,9 @@ class User extends Authenticatable
             'skill_id'
         );
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
 }

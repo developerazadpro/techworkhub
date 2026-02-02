@@ -12,6 +12,8 @@ use App\Services\JobMatchingService;
 use App\Models\User;
 use App\Support\JobStatusTransition;
 use App\Models\Skill;
+use App\Events\JobCreated;
+use App\Events\JobAccepted;
 
 class WorkJobController extends Controller
 {
@@ -88,7 +90,7 @@ class WorkJobController extends Controller
             'description' => $validated['description'],
             'skills' => $skills,
             'status' => 'open',
-        ]);
+        ]);        
 
         // 4. Call Go matching service (non-blocking)
         try {
@@ -104,7 +106,10 @@ class WorkJobController extends Controller
         // 5. Refresh job to get updated recommended_technicians
         $job->refresh();
 
-        // 6. Return response
+        // 6. Create event
+        event(new JobCreated($job));
+
+        // 7. Return response
         return response()->json([
             'message' => 'Job created successfully',
             'job' => $job,
@@ -209,7 +214,7 @@ class WorkJobController extends Controller
             return response()->json(['message' => 'Only technicians can accept jobs.'], 403);
         }
 
-        DB::transaction(function () use ($id) {
+        $job = DB::transaction(function () use ($id) {
             $job = WorkJob::lockForUpdate()->findOrFail($id);
 
             if ($job->status !== 'open') {
@@ -223,7 +228,12 @@ class WorkJobController extends Controller
             ]);
 
             $job->update(['status' => 'assigned']);
+
+            return $job;
         });
+
+        // Create event
+        event(new JobAccepted($job, Auth::user()));
 
         return response()->json([
             'success' => true,
