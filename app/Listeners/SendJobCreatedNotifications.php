@@ -8,7 +8,7 @@ use App\Events\JobCreated;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Log;
 
-class CreateJobCreatedNotifications
+class SendJobCreatedNotifications
 {
     /**
      * Create the event listener.
@@ -39,6 +39,7 @@ class CreateJobCreatedNotifications
                 'body' => "A new job is available that matches your profile.",
                 'data' => [
                     'job_id' => $job->id,
+                    'route' => "/technician/job/{$job->id}",
                 ],
             ]);
         }

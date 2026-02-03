@@ -14,6 +14,7 @@ use App\Support\JobStatusTransition;
 use App\Models\Skill;
 use App\Events\JobCreated;
 use App\Events\JobAccepted;
+use App\Events\JobStatusChanged;
 
 class WorkJobController extends Controller
 {
@@ -308,13 +309,13 @@ class WorkJobController extends Controller
 
         $job = WorkJob::with('client:id,name,email,created_at')->findOrFail($id);
 
-        $currentStatus = $job->status;
-        $nextStatus = $request->status;
+        $oldStatus = $job->status;
+        $newStatus = $request->status;
 
-        if (! JobStatusTransition::canTransition($currentStatus, $nextStatus)) {
+        if (! JobStatusTransition::canTransition($oldStatus, $newStatus)) {
             return response()->json([
-                'message' => "Invalid status transition from {$currentStatus} to {$nextStatus}",
-                'allowed' => JobStatusTransition::allowed()[$currentStatus] ?? [],
+                'message' => "Invalid status transition from {$oldStatus} to {$newStatus}",
+                'allowed' => JobStatusTransition::allowed()[$oldStatus] ?? [],
             ], 422);
         }
 
@@ -326,17 +327,17 @@ class WorkJobController extends Controller
             ], 422);
         }
 
-        $job->status = $request->status;
+        $job->status = $newStatus;
         $job->save();
 
-        // Optional: Trigger notifications here
         // Notification::dispatch($job);
+        event(new JobStatusChanged($job, $oldStatus, $newStatus));
 
         return response()->json([
             'success' => true,
             'message' => 'Job status updated successfully',
             'job' => $job,
-            'allowed_next_statuses' => JobStatusTransition::allowed()[$nextStatus],
+            'allowed_next_statuses' => JobStatusTransition::allowed()[$newStatus],
         ]);
     }
     

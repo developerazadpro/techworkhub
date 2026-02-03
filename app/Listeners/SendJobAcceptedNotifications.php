@@ -7,7 +7,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use App\Events\JobAccepted;
 use App\Models\Notification;
 
-class CreateJobAcceptedNotifications
+class SendJobAcceptedNotifications
 {
     /**
      * Create the event listener.
@@ -30,6 +30,7 @@ class CreateJobAcceptedNotifications
             'data' => [
                 'job_id' => $event->job->id,
                 'technician_id' => $event->technician->id,
+                'route' => "/client/job/{$event->job->id}",
             ],
         ]);
     }
