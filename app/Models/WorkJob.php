@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class WorkJob extends Model
 {
+    use HasFactory;
+    
     protected $table = 'work_jobs';
 
     protected $fillable = ['client_id', 'title', 'description', 'status', 'skills', 'recommended_technicians'];
