@@ -10,18 +10,21 @@ class JobMatchingService
 {
     public function run(WorkJob $job): void
     {
+        
         $technicians = User::whereHas('roles', fn ($q) =>
             $q->where('name', 'technician')
-        )->with('skills')->get();
-
-        $response = app(GoMatchingService::class)->matchTechnicians([
+        )->with('skills')->get();        
+        
+        $payload = [
             'job_id' => $job->id,
             'required_skills' => $job->skills,
             'technicians' => $technicians->map(fn ($tech) => [
                 'id' => $tech->id,
                 'skills' => $tech->skills->pluck('name')->toArray(),
             ])->toArray(),
-        ]);
+        ];
+        
+        $response = app(GoMatchingService::class)->matchTechnicians($payload);
 
         $job->update([
             'recommended_technicians' => $response['recommended_technicians'] ?? [],
