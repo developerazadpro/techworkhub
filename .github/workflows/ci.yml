@@ -72,16 +72,19 @@ jobs:
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+      - name: Create safe branch tag
+        run: echo "BRANCH_TAG=${GITHUB_REF_NAME//\//-}" >> $GITHUB_ENV
+
       - name: Build Docker Image
         run: |
           docker build \
           -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:latest \
-          -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ github.ref_name }} \
+          -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ env.BRANCH_TAGe }} \
           -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ github.sha }} \
           .
 
       - name: Push Docker Image
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/techworkhub-backend:latest
-          docker push ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ github.ref_name }}
+          docker push ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ env.BRANCH_TAG }}
           docker push ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ github.sha }}
