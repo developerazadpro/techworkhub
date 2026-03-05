@@ -75,15 +75,15 @@ jobs:
       - name: Create safe branch tag
         run: echo "BRANCH_TAG=${GITHUB_REF_NAME//\//-}" >> $GITHUB_ENV
 
-      - name: Build Docker Image
+      - name: Build Docker Images
         run: |
           docker build \
           -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:latest \
-          -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ env.BRANCH_TAGe }} \
+          -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ env.BRANCH_TAG }} \
           -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ github.sha }} \
           .
 
-      - name: Push Docker Image
+      - name: Push Docker Images
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/techworkhub-backend:latest
           docker push ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ env.BRANCH_TAG }}
