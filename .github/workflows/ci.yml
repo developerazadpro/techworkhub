@@ -74,8 +74,14 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:latest .
+          docker build \
+          -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:latest \
+          -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ github.ref_name }} \
+          -t ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ github.sha }} \
+          .
 
       - name: Push Docker Image
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/techworkhub-backend:latest
+          docker push ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ github.ref_name }}
+          docker push ghcr.io/${{ github.repository_owner }}/techworkhub-backend:${{ github.sha }}
